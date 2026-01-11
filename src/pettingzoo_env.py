@@ -1,5 +1,6 @@
 import numpy as np
 import pygame
+import random
 from pettingzoo import AECEnv
 from pettingzoo.utils import wrappers
 from gymnasium.spaces import Box, Discrete
@@ -65,6 +66,9 @@ class MicroBattleEnv(AECEnv):
                 agent = Agent(x, y, team_id)
                 agent_id = f"agent_{team_id}_{i}"
                 agent.agent_id = agent_id
+                # Unii agenți au comunicare limitată (doar cu vecinii apropiați)
+                agent.has_limited_communication = random.random() < 0.5
+                agent.update_color()
                 self.agents_list.append((agent_id, agent))
         
         # Creează lista de nume agenți pentru PettingZoo
@@ -233,7 +237,7 @@ class MicroBattleEnv(AECEnv):
             current_time = pygame.time.get_ticks()
             # Livrează mesaje echipei și procesează inbox
             if self.message_bus:
-                agent.inbox = self.message_bus.collect(agent.team_id, current_time)
+                agent.inbox = self.message_bus.collect(agent.team_id, current_time, receiving_agent=agent)
                 agent.process_inbox(self.message_bus)
 
             # Actualizează agentul (cu bus pentru broadcast targets)

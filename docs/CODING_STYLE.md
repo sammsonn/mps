@@ -2,7 +2,7 @@
 
 ## Introducere
 
-Acest document definește stilul de codare și convențiile care trebuie urmate în cadrul proiectului **2D Arena Micro-Battle**. Respectarea acestui ghid asigură un cod curat, lizibil și mentenabil, facilitând colaborarea în cadrul echipei.
+Acest document definește stilul de codare și convențiile care trebuie urmate în cadrul proiectului **Synapse Strike**. Respectarea acestui ghid asigură un cod curat, lizibil și mentenabil, facilitând colaborarea în cadrul echipei.
 
 ## Principii Generale
 

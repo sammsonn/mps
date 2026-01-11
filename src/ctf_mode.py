@@ -199,12 +199,16 @@ class CaptureTheFlagMode:
                 if self.message_bus and hasattr(agent, 'agent_id'):
                     # Echipa victimă: FLAG_TAKEN -> urmărește carrier-ul inamic
                     from communication import Message
+                    is_limited = getattr(agent, 'has_limited_communication', False)
                     msg_enemy = Message(
                         sender_id=agent.agent_id,
                         team_id=enemy_team,
                         msg_type="FLAG_TAKEN",
-                        payload={"carrier_id": agent.agent_id, "x": agent.x, "y": agent.y},
-                        timestamp=current_time
+                        payload={"carrier_id": agent.agent_id, "x": round(agent.x, 3), "y": round(agent.y, 3)},
+                        timestamp=current_time,
+                        sender_x=round(agent.x, 3),
+                        sender_y=round(agent.y, 3),
+                        is_limited=is_limited
                     )
                     self.message_bus.publish(msg_enemy)
                     # Echipa carrier-ului: pentru escortă (opțional)
@@ -212,8 +216,11 @@ class CaptureTheFlagMode:
                         sender_id=agent.agent_id,
                         team_id=agent.team_id,
                         msg_type="FLAG_TAKEN_FRIENDLY",
-                        payload={"carrier_id": agent.agent_id, "x": agent.x, "y": agent.y},
-                        timestamp=current_time
+                        payload={"carrier_id": agent.agent_id, "x": round(agent.x, 3), "y": round(agent.y, 3)},
+                        timestamp=current_time,
+                        sender_x=round(agent.x, 3),
+                        sender_y=round(agent.y, 3),
+                        is_limited=is_limited
                     )
                     self.message_bus.publish(msg_friendly)
                 
@@ -290,13 +297,17 @@ class CaptureTheFlagMode:
             # Broadcast FLAG_DROPPED
             if self.message_bus and hasattr(agent, 'agent_id'):
                 from communication import Message
+                is_limited = getattr(agent, 'has_limited_communication', False)
                 for team in [0,1]:
                     self.message_bus.publish(Message(
                         sender_id=agent.agent_id,
                         team_id=team,
                         msg_type="FLAG_DROPPED",
-                        payload={"x": agent.x, "y": agent.y},
-                        timestamp=current_time
+                        payload={"x": round(agent.x, 3), "y": round(agent.y, 3)},
+                        timestamp=current_time,
+                        sender_x=round(agent.x, 3),
+                        sender_y=round(agent.y, 3),
+                        is_limited=is_limited
                     ))
         
         self.respawn_queue.append((agent, current_time))

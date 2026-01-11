@@ -11,10 +11,12 @@ from menu import Menu
 from projectile import Projectile
 from communication import MessageBus
 from statistics import StatisticsTracker
+from logger import logger
 
 class Game:
     def __init__(self, game_mode="Survival"):
         pygame.init()
+        logger.info(f"Initializing game - Mode: {game_mode}")
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption(f"Micro Battle - {game_mode} Mode")
         self.clock = pygame.time.Clock()
@@ -25,6 +27,7 @@ class Game:
         
         # Creează harta (cu parametri specifici pentru game mode)
         self.game_map = GameMap(game_mode)
+        logger.info(f"Game map created for {game_mode} mode")
         
         # Creează agenții bazat pe modul de joc
         self.agents = []
@@ -41,7 +44,11 @@ class Game:
                     role = ROLE_ATTACKER #if random.random() < 0.5 else ROLE_DEFENDER
                     agent = Agent(x, y, team_id, role)
                     agent.agent_id = f"agent_{team_id}_{i}"
+                    # Unii agenți au comunicare limitată (doar cu vecinii apropiați)
+                    agent.has_limited_communication = random.random() < 0.5
+                    agent.update_color()
                     self.agents.append(agent)
+            logger.info(f"Created {num_teams} teams with {agents_per_team} agents each for King of the Hill mode")
         elif game_mode == "Capture the Flag":
             num_teams = 2
             agents_per_team = CTF_AGENTS_PER_TEAM
@@ -51,7 +58,11 @@ class Game:
                     # Toți agenții sunt atacatori
                     agent = Agent(x, y, team_id, ROLE_ATTACKER)
                     agent.agent_id = f"agent_{team_id}_{i}"
+                    # Unii agenți au comunicare limitată (doar cu vecinii apropiați)
+                    agent.has_limited_communication = random.random() < 0.5
+                    agent.update_color()
                     self.agents.append(agent)
+            logger.info(f"Created {num_teams} teams with {agents_per_team} agents each for Capture the Flag mode")
         else:
             # Survival mode - 5 agenți per echipă, fără roluri
             num_teams = 2
@@ -62,7 +73,11 @@ class Game:
                     x, y = self.game_map.get_spawn_position(team_id, num_teams)
                     agent = Agent(x, y, team_id)
                     agent.agent_id = f"agent_{team_id}_{i}"
+                    # Unii agenți au comunicare limitată (doar cu vecinii apropiați)
+                    agent.has_limited_communication = random.random() < 0.5
+                    agent.update_color()
                     self.agents.append(agent)
+            logger.info(f"Created {num_teams} teams with {agents_per_team} agents each for Survival mode")
         
         # Lista de proiectile
         self.projectiles = []
@@ -81,13 +96,16 @@ class Game:
         # Inițializează modul de joc ales
         if game_mode == "Survival":
             self.game_mode = SurvivalMode(self.agents)
+            logger.info("Survival mode initialized")
         elif game_mode == "King of the Hill":
             self.game_mode = KingOfTheHillMode(self.agents, self.game_map, self.statistics_tracker)
+            logger.info("King of the Hill mode initialized")
             # Setează zona centrală ca țintă pentru toți agenții
             for agent in self.agents:
                 agent.target_zone = self.game_mode.central_zone
         elif game_mode == "Capture the Flag":
             self.game_mode = CaptureTheFlagMode(self.agents, self.game_map, self.statistics_tracker, message_bus=self.message_bus)
+            logger.info("Capture the Flag mode initialized")
             # Setează referințe pentru fiecare agent
             for agent in self.agents:
                 # Baza proprie (unde să aducă steagul)
@@ -123,9 +141,11 @@ class Game:
                     self.running = False
                 elif event.key == pygame.K_r and self.game_mode.game_over:
                     # Reporni jocul cu același mod
+                    logger.info(f"Restarting game in {self.game_mode_name} mode")
                     self.__init__(self.game_mode_name)
                 elif event.key == pygame.K_m and self.game_mode.game_over:
                     # Înapoi la meniu
+                    logger.info("Returning to menu")
                     self.running = False
                     return "MENU"
         return None
@@ -143,7 +163,7 @@ class Game:
                 if agent.alive:
                     self.statistics_tracker.update_agent_movement(agent)
                 # Livrează mesaje și procesează inbox
-                agent.inbox = self.message_bus.collect(agent.team_id, current_time)
+                agent.inbox = self.message_bus.collect(agent.team_id, current_time, receiving_agent=agent)
                 agent.process_inbox(self.message_bus)
                 # Update cu bus pentru broadcast
                 agent.update(self.agents, self.game_map.obstacles, current_time, message_bus=self.message_bus)
@@ -151,6 +171,7 @@ class Game:
                 # Verifică dacă agentul tocmai a murit și notifică game mode-ul (pentru respawn)
                 if was_alive and not agent.alive:
                     self.statistics_tracker.on_agent_death(agent)
+                    logger.game_event("AGENT_DEATH", f"Agent {agent.agent_id} from team {agent.team_id} died")
                     if self.game_mode_name in ["King of the Hill", "Capture the Flag"]:
                         self.game_mode.on_agent_death(agent)
                 
@@ -195,6 +216,7 @@ class Game:
                         # Verifică dacă agentul tocmai a murit (din cauza proiectilului)
                         if was_alive_before and not agent.alive:
                             self.statistics_tracker.on_agent_death(agent)
+                            logger.game_event("KILL", f"Agent {agent.agent_id} killed by projectile from {projectile.owner.agent_id if projectile.owner else 'unknown'}")
                             if self.game_mode_name in ["King of the Hill", "Capture the Flag"]:
                                 self.game_mode.on_agent_death(agent)
                         break
@@ -249,14 +271,19 @@ def main():
         
         # Verifică dacă utilizatorul a ieșit
         if selected_mode is None:
+            logger.info("User exited from menu")
+            logger.shutdown()
             break
         
         # Pornește jocul cu modul selectat
+        logger.info(f"Starting game with mode: {selected_mode}")
         game = Game(selected_mode)
         result = game.run()
         
         # Verifică dacă utilizatorul vrea să se întoarcă la meniu
         if result != "MENU":
+            logger.info("User exited game")
+            logger.shutdown()
             break
 
 if __name__ == "__main__":

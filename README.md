@@ -1,42 +1,59 @@
-# 2D Arena Micro-Battle
+# Synapse Strike
 
 [![Stare Proiect](https://img.shields.io/badge/status-in%20development-yellow.svg)](https://shields.io/)
 [![Licență](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
-Un joc 2D de tip arenă, cu acțiune rapidă, dezvoltat în cadrul materiei **Managementul Proiectelor Software**.
+Un joc 2D de tip arenă, cu acțiune rapidă și suport pentru Reinforcement Learning, dezvoltat în cadrul materiei **Managementul Proiectelor Software**.
 
 ---
 
 ## Cuprins
 
-*   [Despre Proiect](#despre-proiect)
-*   [Tehnologii Folosite](#tehnologii-folosite)
-*   [Cum se Rulează](#cum-se-ruleaz%C4%83)
-*   [Structura Proiectului](#structura-proiectului)
-*   [Flux de Dezvoltare (Workflow)](#flux-de-dezvoltare-workflow)
-*   [Documentație](#documenta%C8%9Bie)
-*   [Echipa](#echipa)
+* [Despre Proiect](#despre-proiect)
+* [Tehnologii Folosite](#tehnologii-folosite)
+* [Moduri de Joc](#moduri-de-joc)
+* [Cum se Rulează](#cum-se-rulează)
+* [Structura Proiectului](#structura-proiectului)
+* [Integrare AI & RL](#integrare-ai--rl)
+* [Echipa](#echipa)
 
 ---
 
 ## Despre Proiect
 
-**2D Arena Micro-Battle** este un prototip de joc în care agenți controlați de jucător și/sau de AI se luptă într-o arenă statică. Proiectul explorează conceptele de bază ale dezvoltării de jocuri, incluzând controlul personajului, mecanici de luptă, inteligență artificială simplă și managementul stării jocului.
+**Synapse Strike** este un joc dezvoltat în Python folosind Pygame, în care agenți controlați de AI se luptă într-o arenă dinamică. Proiectul include mecanici complexe de luptă, pathfinding, comunicare între agenți și este proiectat să fie compatibil cu **PettingZoo** pentru antrenarea agenților folosind Reinforcement Learning (RL).
 
 ### Funcționalități Principale
--   Controlul fluid al unui agent într-un mediu 2D.
--   Un sistem de luptă bazat pe proiectile.
--   Agenți inamici cu un comportament de bază (AI).
--   Sistem de viață și coliziuni.
--   O interfață de utilizator (UI) minimalistă pentru afișarea informațiilor esențiale.
+-   **Engine propriu 2D:** Implementat de la zero folosind Pygame.
+-   **AI Bazat pe Reguli:** Agenți inteligenți cu pathfinding (Dijkstra), Line of Sight (LoS), și comportamente specifice rolurilor (Attacker, Defender, Carrier, Chaser).
+-   **Sistem de Comunicare:** Agenții colaborează folosind un "Message Bus" (ex: semnalizează inamici văzuți, cer ajutor, anunță capturarea steagului).
+-   **Statistici Detaliate:** Tracking pentru KDA, DPS, controlul zonelor și obiective.
+-   **Mediu RL:** Wrapper compatibil cu standardul PettingZoo/Gymnasium pentru experimente de Machine Learning.
 
 ---
 
 ## Tehnologii Folosite
 
-*   **Motor de Joc:** ![Unity](https://img.shields.io/badge/Unity-202X.X-black?style=for-the-badge&logo=unity)
-*   **Limbaj de Programare:** ![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)*   **Versionare:** ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
-*   **IDE:** Visual Studio / JetBrains Rider
+* **Limbaj de Programare:** ![Python](https://img.shields.io/badge/Python-3.x-blue?style=for-the-badge&logo=python&logoColor=white)
+* **Bibliotecă Grafică:** ![Pygame](https://img.shields.io/badge/Pygame-2.x-green?style=for-the-badge&logo=python)
+* **Reinforcement Learning:** ![PettingZoo](https://img.shields.io/badge/PettingZoo-API-orange?style=for-the-badge)
+* **Altele:** NumPy, Gymnasium
+
+---
+
+## Moduri de Joc
+
+Jocul include trei moduri distincte, accesibile din meniul principal:
+
+1.  **Survival:**
+    * **Obiectiv:** Elimină toți agenții echipei adverse.
+    * **Mecanică:** Deathmatch clasic 5v5.
+2.  **King of the Hill (KOTH):**
+    * **Obiectiv:** Controlează zona centrală a hărții.
+    * **Mecanică:** Echipele acumulează puncte doar când au agenți în zonă și inamicii sunt eliminați din perimetru. Include roluri dinamice de atacanți și apărători.
+3.  **Capture the Flag (CTF):**
+    * **Obiectiv:** Capturează steagul inamic și adu-l la bază.
+    * **Mecanică:** Agenții primesc roluri specifice (Carrier, Chaser) și trebuie să colaboreze pentru a proteja purtătorul steagului.
 
 ---
 
@@ -45,58 +62,82 @@ Un joc 2D de tip arenă, cu acțiune rapidă, dezvoltat în cadrul materiei **Ma
 Pentru a rula acest proiect local, urmați acești pași:
 
 ### Prerechizite
-Asigurați-vă că aveți instalate următoarele:
-*   [Git](https://git-scm.com/)
-*   [Unity Hub](https://unity.com/download)
-*   Unity Editor (versiunea **202x.x.x** - aceeași versiune folosită în proiect)
+Asigurați-vă că aveți instalat **Python 3.8+**.
 
 ### Instalare și Rulare
+
 1.  **Clonați repository-ul:**
     ```sh
-    git clone [LINK-CATRE-REPOSITORY-UL-DVS.]
+    git clone https://gitlab.cs.pub.ro/mps-2025/track-1/lu-12-14-luckycharm.git
+    cd lu-12-14-luckycharm
     ```
-2.  **Deschideți proiectul în Unity Hub:**
-    *   Lansați Unity Hub.
-    *   Apăsați pe butonul `Open` sau `Add project from disk`.
-    *   Navigați la folderul unde ați clonat repository-ul și selectați-l.
-3.  **Deschideți scena principală:**
-    *   În fereastra `Project` din Unity, navigați la `Assets/Scenes/`.
-    *   Deschideți scena `MainArena.unity`.
-4.  **Rulați jocul:**
-    *   Apăsați butonul **Play** (▶) din partea de sus a editorului Unity.
+
+2.  **Creați și activați environment-ul virtual:**
+    ```sh
+    python3 -m venv venv
+    source venv/bin/activate  # Pentru Linux/Mac
+    # Pentru Windows: venv\Scripts\activate
+    ```
+
+3.  **Instalați dependențele:**
+    ```sh
+    pip install -r requirements.txt
+    ```
+
+4.  **Rulați jocul (Modul Interactiv):**
+    ```sh
+    python src/main.py
+    ```
+
+5.  **Rulați exemplul PettingZoo (Modul RL):**
+    Pentru a testa mediul de antrenament:
+    ```sh
+    python src/pettingzoo_example.py
+    ```
+
+6.  **Rulați testele:**
+    Pentru a verifica că totul funcționează corect:
+    ```sh
+    python tests/run_tests.py -v
+    ```
 
 ---
 
 ## Structura Proiectului
 
-Proiectul respectă o structură de foldere standard pentru a menține o bună organizare.
+Proiectul este organizat modular în directorul `src/`:
 
-```
+````
 /
-├── Assets/                 # Directorul principal pentru resursele Unity
-│   ├── Scripts/            # Toate script-urile C#
-│   │   ├── Player/
-│   │   ├── Enemy/
-│   │   └── Core/           # Script-uri de management (GameManager, etc.)
-│   ├── Sprites/            # Toate resursele grafice 2D
-│   ├── Prefabs/            # Obiecte pre-configurate (Player, Enemy, Projectile)
-│   └── Scenes/             # Scenele jocului (MainArena, etc.)
+├── src/
+│   ├── main.py                 \# Punctul de intrare (Meniu & Game Loop)
+│   ├── menu.py                 \# Interfața de meniu
+│   ├── config.py               \# Constante și setări globale
+│   ├── game_map.py             \# Generare hărți și obstacole
+│   ├── agent.py                \# Logică agenți, AI, Pathfinding
+│   ├── projectile.py           \# Fizica proiectilelor
+│   ├── communication.py        \# Sistemul de mesaje între agenți
+│   ├── statistics.py           \# Colectare metrici (DPS, KDA)
+│   ├── pettingzoo_env.py       \# Wrapper pentru mediul RL
+│   │
+│   ├── survival_mode.py        \# Logică mod Survival
+│   ├── koth_mode.py            \# Logică mod King of the Hill
+│   └── ctf_mode.py             \# Logică mod Capture the Flag
 │
-├── Documentation/          # Documente de proiect (SRS, SDD, etc.)
-│
-├── .gitignore              # Fișier pentru a ignora fișierele temporare Unity
-└── README.md               # Acest fișier
-```
+├── docs/
+│    └── CODING_STYLE.md        \# Coding Style
+└── README.md                   \# Acest fișier
+````
 
 ---
 
-## Flux de Dezvoltare (Workflow)
+## Integrare AI & RL
 
-Colaborarea în cadrul acestui proiect se bazează pe un flux de lucru **Gitflow simplificat**:
--   **`main`**: Conține doar versiuni stabile, corespunzătoare milestone-urilor.
--   **`develop`**: Este branch-ul principal de dezvoltare. Toate funcționalitățile noi sunt integrate aici.
--   **Branch-uri `feature/`**: Orice funcționalitate nouă se dezvoltă pe un branch dedicat (ex: `feature/player-shooting`).
--   **Pull Requests (PRs)**: Toate modificările trebuie să treacă printr-un Pull Request către `develop` și să fie aprobate de **cel puțin un alt membru al echipei** înainte de a fi integrate.
+Proiectul expune un mediu standardizat pentru Reinforcement Learning prin clasa `MicroBattleEnv` din `src/pettingzoo_env.py`.
+
+* **Spațiu de Observație:** Poziții, viață, inamici în raza vizuală, mesaje de echipă.
+* **Spațiu de Acțiune:** Continuu (Box) pentru mișcare și unghi tragere, sau Discret (în funcție de configurare).
+* **Recompense:** Bazate pe damage dat, kill-uri, capturare obiective și supraviețuire.
 
 ---
 
@@ -104,8 +145,8 @@ Colaborarea în cadrul acestui proiect se bazează pe un flux de lucru **Gitflow
 
 Pentru mai multe detalii despre planificarea, arhitectura și cerințele proiectului, consultați resursele de mai jos:
 
-*   🌐 **[Pagina Wiki a Proiectului](https://gitlab.cs.pub.ro/mps-2025/track-1/lu-12-14-luckycharm/-/wikis/homeLINK-CATRE-WIKI)**: Hub-ul central pentru documentația proiectului.
-*   📄 **[Standarde de Codare (Coding Style)](https://gitlab.cs.pub.ro/mps-2025/track-1/lu-12-14-luckycharm/-/blob/main/CODING_STYLE.md?ref_type=heads)**: Regulile de codare pe care le respectăm.
+*   🌐 **[Pagina Wiki a Proiectului](https://gitlab.cs.pub.ro/mps-2025/track-1/lu-12-14-luckycharm/-/wikis/home)**: Hub-ul central pentru documentația proiectului.
+*   📄 **[Standarde de Codare (Coding Style)](https://gitlab.cs.pub.ro/mps-2025/track-1/lu-12-14-luckycharm/-/blob/main/docs/CODING_STYLE.md?ref_type=heads)**: Regulile de codare pe care le respectăm.
 *   📂 **[Director Google Drive](https://drive.google.com/drive/folders/1D7yvULvRNyAsXOY5aZUKo3iiGY99fhaN)**: Conține documentele detaliate (SRS, SDD, WBS, Gantt).
 
 ---
@@ -115,6 +156,11 @@ Pentru mai multe detalii despre planificarea, arhitectura și cerințele proiect
 | Nume | Rol Principal |
 | :--- | :--- |
 | Samson Alexandru | **Project Manager** |
-| [Nume Membru 2] | **Team Leader / Arhitect** |
-| [Nume Membru 3] | **Dezvoltator Gameplay** |
-| [Nume Membru 4] | **Dezvoltator / QA** |
+| Carazeanu Antonio | **Team Leader** |
+| Ilie Alexandru | **Dezvoltator** |
+| Calu Andrei | **Dezvoltator** |
+| Echim Andrei | **Dezvoltator** |
+| Baston Jenică | **QA** |
+| Trufelea Alexandru | **QA** |
+| Petrea Octavian | **QA** |
+| Logofătu Patricia | **QA** |

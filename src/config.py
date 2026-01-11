@@ -11,6 +11,14 @@ TEAM_COLORS = {
     3: (255, 255, 50)   # Galben
 }
 
+# Culori deschise pentru agenții cu comunicare limitată
+TEAM_COLORS_LIMITED = {
+    0: (255, 150, 150),   # Roșu deschis
+    1: (150, 150, 255),   # Albastru deschis
+    2: (150, 255, 150),   # Verde deschis
+    3: (255, 255, 150)    # Galben deschis
+}
+
 # Configurări hartă
 TILE_SIZE = 32
 MAP_WIDTH = 25
@@ -26,6 +34,7 @@ AGENT_ATTACK_COOLDOWN = 500  # milisecunde
 AGENT_LOS_ANGLE = 90  # Unghiul conului de vedere (grade)
 AGENT_LOS_RANGE = 250  # Distanța maximă de vedere
 AGENT_SEPARATION_DISTANCE = 30  # Distanța minimă între agenți din aceeași echipă
+COMMUNICATION_RANGE = 150  # Distanța maximă pentru comunicare limitată între vecini (pixels)
 
 # Configurări proiectile
 PROJECTILE_SIZE = 5

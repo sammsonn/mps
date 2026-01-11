@@ -1,0 +1,46 @@
+# GitLab CI/CD Pipeline Configuration
+# This pipeline runs tests automatically on every push and merge request
+
+stages:
+  - test
+
+# Define the test job
+test:
+  stage: test
+  image: python:3.12
+  
+  before_script:
+    # Create virtual environment and install dependencies
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+  
+  script:
+    # Run the test suite with verbose output
+    - python tests/run_tests.py -v
+  
+  # Optional: Generate coverage report (uncomment if you add coverage.py)
+  # after_script:
+  #   - pip install coverage
+  #   - coverage run -m unittest discover tests
+  #   - coverage report
+  
+  # Cache the virtual environment to speed up subsequent runs
+  cache:
+    paths:
+      - venv/
+    key: ${CI_COMMIT_REF_SLUG}
+  
+  # Only run on merge requests and main/master branch
+  only:
+    - merge_requests
+    - main
+    - master
+    - develop
+  
+  # Optional: Allow the job to fail without blocking the pipeline
+  # allow_failure: false
+  
+  # Optional: Define when to run this job
+  # when: always

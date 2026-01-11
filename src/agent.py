@@ -58,6 +58,22 @@ class Agent:
         self.search_waypoints = []
         self.search_index = 0
         self.search_reach_threshold = 40  # pixeli
+        
+        # Comunicare limitată - dacă True, agentul poate comunica doar cu vecinii apropiați
+        self.has_limited_communication = False
+    
+    def get_color(self):
+        """Returnează culoarea agentului în funcție de comunicare limitată"""
+        if self.has_limited_communication:
+            return TEAM_COLORS_LIMITED.get(self.team_id, TEAM_COLORS[self.team_id])
+        return self.color
+    
+    def update_color(self):
+        """Actualizează culoarea agentului în funcție de comunicare limitată"""
+        if self.has_limited_communication:
+            self.color = TEAM_COLORS_LIMITED.get(self.team_id, TEAM_COLORS[self.team_id])
+        else:
+            self.color = TEAM_COLORS[self.team_id]
 
     def _can_broadcast(self, msg_type, current_time, cooldown_ms):
         last = self.last_msg_times.get(msg_type, -1)
@@ -810,12 +826,37 @@ class Agent:
         self.inbox = []
 
     def send_team_broadcast(self, message_bus, msg_type, payload):
-        """Trimite un mesaj de echipă generic."""
+        """Trimite un mesaj de echipă generic.
+        
+        Coordonatele (x, y) din payload sunt rotunjite automat la 3 zecimale.
+        """
         if not message_bus or not hasattr(self, 'agent_id'):
             return
         from communication import Message  # Import local pentru a evita cicluri
         ts = pygame.time.get_ticks()
-        message_bus.publish(Message(self.agent_id, self.team_id, msg_type, payload, ts))
+        
+        # Rotunjește coordonatele la 3 zecimale dacă există în payload
+        processed_payload = payload.copy()
+        if "x" in processed_payload and isinstance(processed_payload["x"], (int, float)):
+            processed_payload["x"] = round(processed_payload["x"], 3)
+        if "y" in processed_payload and isinstance(processed_payload["y"], (int, float)):
+            processed_payload["y"] = round(processed_payload["y"], 3)
+        
+        # Obține poziția expeditorului și flag-ul de comunicare limitată
+        sender_x = round(self.x, 3) if hasattr(self, 'x') else None
+        sender_y = round(self.y, 3) if hasattr(self, 'y') else None
+        is_limited = getattr(self, 'has_limited_communication', False)
+        
+        message_bus.publish(Message(
+            self.agent_id, 
+            self.team_id, 
+            msg_type, 
+            processed_payload, 
+            ts,
+            sender_x=sender_x,
+            sender_y=sender_y,
+            is_limited=is_limited
+        ))
     
     def find_path_to_target(self, obstacles):
         """Găsește o cale către țintă folosind Dijkstra"""
@@ -1281,8 +1322,11 @@ class Agent:
                 p2 = (int(self.path[i+1][0] - camera_x), int(self.path[i+1][1] - camera_y))
                 pygame.draw.line(screen, (255, 255, 0), p1, p2, 1)
         
+        # Obține culoarea corectă (deschisă pentru comunicare limitată)
+        agent_color = self.get_color()
+        
         # Desenează corpul agentului
-        pygame.draw.circle(screen, self.color, 
+        pygame.draw.circle(screen, agent_color, 
                          (int(self.x - camera_x), int(self.y - camera_y)), 
                          AGENT_SIZE // 2)
         
@@ -1299,7 +1343,7 @@ class Agent:
                        (int(end_x - camera_x), int(end_y - camera_y)), 3)
         
         # Desenează LoS (con semi-transparent)
-        los_color = (*self.color, 50)  # Semi-transparent
+        los_color = (*agent_color, 50)  # Semi-transparent
         los_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         
         # Calculează punctele pentru con
