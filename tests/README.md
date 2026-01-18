@@ -1,142 +1,142 @@
-# Unit Tests for Synapse Strike
+# Teste Unitare pentru Synapse Strike
 
-This directory contains comprehensive unit tests for the Synapse Strike game.
+Acest director conține teste unitare cuprinzătoare pentru jocul Synapse Strike.
 
-## Test Structure
+## Structura Teste
 
 ```
 tests/
-├── __init__.py              # Test package init
-├── run_tests.py             # Main test runner
-├── test_agent.py            # Agent class tests
-├── test_projectile.py       # Projectile class tests
-├── test_communication.py    # Message & MessageBus tests
-├── test_game_map.py         # GameMap & Wall tests
-├── test_survival_mode.py    # Survival mode tests
-├── test_statistics.py       # Statistics tracking tests
-└── README.md                # This file
+├── __init__.py              # Inițializare pachet teste
+├── run_tests.py             # Runner principal teste
+├── test_agent.py            # Teste clasa Agent
+├── test_projectile.py       # Teste clasa Projectile
+├── test_communication.py    # Teste Message & MessageBus
+├── test_game_map.py         # Teste GameMap & Wall
+├── test_survival_mode.py    # Teste mod Survival
+├── test_statistics.py       # Teste tracking statistici
+└── README.md                # Acest fișier
 ```
 
-## Running Tests
+## Rulare Teste
 
-### Run All Tests
+### Rulare Toate Teste
 ```bash
-# Make sure venv is activated
+# Asigurați-vă că venv este activat
 source venv/bin/activate
 
-# Run all tests
+# Rulați toate testele
 python tests/run_tests.py
 
-# Run with verbose output
+# Rulați cu output verbose
 python tests/run_tests.py -v
 ```
 
-### Run Specific Test Module
+### Rulare Modul Test Specific
 ```bash
-# Run only agent tests
+# Rulați doar teste agent
 python tests/run_tests.py test_agent
 
-# Run only projectile tests
+# Rulați doar teste projectile
 python tests/run_tests.py test_projectile
 
-# Run with unittest directly
+# Rulați cu unittest direct
 python -m unittest tests.test_agent
 ```
 
-### Run Individual Test Class
+### Rulare Clasa Test Individual
 ```bash
-# Run specific test class
+# Rulați clasa test specifică
 python -m unittest tests.test_agent.TestAgentInitialization
 
-# Run specific test method
+# Rulați metoda test specifică
 python -m unittest tests.test_agent.TestAgentInitialization.test_agent_creation
 ```
 
-## Test Coverage
+## Acoperire Teste
 
-### Agent Tests (`test_agent.py`)
-- ✓ Agent initialization and attributes
-- ✓ Health and damage mechanics
-- ✓ Death conditions
-- ✓ Communication features (limited vs. normal)
-- ✓ Distance calculations
-- ✓ Role assignments (Attacker, Defender, Carrier, Chaser)
+### Teste Agent (`test_agent.py`)
+- ✓ Inițializare și atribute agent
+- ✓ Mecanica sănătății și daunelor
+- ✓ Condiții moarte
+- ✓ Funcții comunicare (limitată vs normală)
+- ✓ Calculări distanță
+- ✓ Atribuire roluri (Attacker, Defender, Carrier, Chaser)
 
-### Projectile Tests (`test_projectile.py`)
-- ✓ Projectile initialization
-- ✓ Custom damage and owner assignment
-- ✓ Velocity calculation from angle
-- ✓ Movement and trajectory
-- ✓ Lifetime and expiration
-- ✓ Collision with agents (friendly fire prevention)
-- ✓ Collision damage
-- ✓ Boundary checking
+### Teste Projectile (`test_projectile.py`)
+- ✓ Inițializare proiectil
+- ✓ Atribuire daune și proprietar personalizate
+- ✓ Calculare viteză din unghi
+- ✓ Mișcare și traiectorie
+- ✓ Viață și expirare
+- ✓ Coliziune cu agenți (prevenire friendly fire)
+- ✓ Daune coliziune
+- ✓ Verificare limite hartă
 
-### Communication Tests (`test_communication.py`)
-- ✓ Message creation and attributes
+### Teste Communication (`test_communication.py`)
+- ✓ Creare mesaje și atribute
 - ✓ MessageBus publish/collect
-- ✓ Team-specific message filtering
-- ✓ Message expiration and cleanup
-- ✓ Agent resolution by ID
-- ✓ Limited communication range
-- ✓ Distance-based message filtering
+- ✓ Filtrare mesaje team-specific
+- ✓ Expirare și curățare mesaje
+- ✓ Rezoluție agent după ID
+- ✓ Rază comunicare limitată
+- ✓ Filtrare mesaje bazată pe distanță
 
-### GameMap Tests (`test_game_map.py`)
-- ✓ Wall creation and destruction
-- ✓ Border walls (indestructible)
-- ✓ Wall damage mechanics
-- ✓ Map initialization for different modes
-- ✓ Spawn position generation
-- ✓ Pathfinding utilities (walkable tiles, neighbors)
-- ✓ Mode-specific features (KOTH zones, CTF flags)
+### Teste GameMap (`test_game_map.py`)
+- ✓ Creare și distrugere pereți
+- ✓ Pereți graniță (indestructibili)
+- ✓ Mecanica daune pereți
+- ✓ Inițializare hartă pentru moduri diferite
+- ✓ Generare poziție spawn
+- ✓ Utilitare pathfinding (dale plimbabile, vecini)
+- ✓ Funcții mode-specifice (zone KOTH, steaguri CTF)
 
-### Survival Mode Tests (`test_survival_mode.py`)
-- ✓ Mode initialization
-- ✓ Victory conditions (team elimination)
-- ✓ Time limit mechanics
-- ✓ Timer functionality
-- ✓ End game conditions
-- ✓ Winner determination
-- ✓ Multiple team configurations
+### Teste Mod Survival (`test_survival_mode.py`)
+- ✓ Inițializare mod
+- ✓ Condiții victorie (eliminare echipă)
+- ✓ Mecanika limită timp
+- ✓ Funcționalitate timer
+- ✓ Condiții end game
+- ✓ Determinare câștigător
+- ✓ Configurări multiple echipe
 
-### Statistics Tests (`test_statistics.py`)
-- ✓ Tracker initialization and reset
-- ✓ Agent statistics (spawns, deaths, damage)
-- ✓ Team statistics aggregation
-- ✓ Shot tracking (fired, hit)
-- ✓ Kill/death/assist tracking
-- ✓ KOTH-specific stats (zone time, damage)
-- ✓ CTF-specific stats (captures, deliveries)
-- ✓ Accuracy and KDA calculations
+### Teste Statistics (`test_statistics.py`)
+- ✓ Inițializare și reset tracker
+- ✓ Statistici agent (spawns, deaths, damage)
+- ✓ Agregare statistici echipă
+- ✓ Tracking shoturi (trase, lovituri)
+- ✓ Tracking kill/death/assist
+- ✓ Statistici KOTH-specific (timp zonă, daune)
+- ✓ Statistici CTF-specific (capturi, livrări)
+- ✓ Calculări acuratețe și KDA
 
-## Writing New Tests
+## Scriere Teste Noi
 
-### Test Template
+### Template Test
 ```python
 import unittest
 import sys
 import os
 
-# Add src directory to path
+# Adaugă director src în path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from your_module import YourClass
 
 class TestYourClass(unittest.TestCase):
-    """Test YourClass functionality"""
+    """Test funcționalitate YourClass"""
     
     def setUp(self):
-        """Set up test fixtures - runs before each test"""
+        """Set up test fixtures - rulează înainte de fiecare test"""
         self.obj = YourClass()
     
     def tearDown(self):
-        """Clean up after test - runs after each test"""
+        """Curățare după test - rulează după fiecare test"""
         pass
     
     def test_something(self):
-        """Test description"""
+        """Descriere test"""
         # Arrange
-        expected = "value"
+        expected = "valoare"
         
         # Act
         result = self.obj.method()
@@ -148,12 +148,12 @@ if __name__ == '__main__':
     unittest.main()
 ```
 
-### Common Assertions
+### Asertări Comune
 ```python
 self.assertEqual(a, b)              # a == b
 self.assertNotEqual(a, b)           # a != b
-self.assertTrue(x)                  # bool(x) is True
-self.assertFalse(x)                 # bool(x) is False
+self.assertTrue(x)                  # bool(x) este True
+self.assertFalse(x)                 # bool(x) este False
 self.assertIs(a, b)                 # a is b
 self.assertIsNone(x)                # x is None
 self.assertIn(a, b)                 # a in b
@@ -161,66 +161,66 @@ self.assertIsInstance(a, b)         # isinstance(a, b)
 self.assertAlmostEqual(a, b)        # round(a-b, 7) == 0
 self.assertGreater(a, b)            # a > b
 self.assertLess(a, b)               # a < b
-self.assertRaises(SomeException)    # Checks if exception raised
+self.assertRaises(SomeException)    # Verifică dacă excepție ridicată
 ```
 
-## Best Practices
+## Practici Bune
 
-1. **One Test, One Assert**: Each test should verify one specific behavior
-2. **Descriptive Names**: Use clear, descriptive test method names
-3. **AAA Pattern**: Arrange, Act, Assert structure
-4. **Independent Tests**: Tests should not depend on each other
-5. **Fast Tests**: Unit tests should run quickly
-6. **Mock External Dependencies**: Mock pygame, file I/O, etc. when needed
+1. **Un Test, O Asertare**: Fiecare test ar trebui să verifice un comportament specific
+2. **Nume Descriptive**: Utilizați nume de metode test clare și descriptive
+3. **Model AAA**: Structură Arrange, Act, Assert
+4. **Teste Independente**: Testele nu ar trebui să depindă una de cealaltă
+5. **Teste Rapide**: Teste unitare ar trebui să ruleze rapid
+6. **Mock Dependențe Externe**: Mock pygame, I/O fișiere, etc. când necesar
 
-## Continuous Integration
+## Integrare Continuă
 
-These tests are designed to be run in CI/CD pipelines:
+Aceste teste sunt proiectate pentru a rula în pipelinuri CI/CD:
 
 ```bash
-# In your CI script
+# În scriptul CI
 source venv/bin/activate
 pip install -r requirements.txt
 python tests/run_tests.py -v
 ```
 
-## Future Test Coverage
+## Acoperire Teste Viitoare
 
-Areas that could benefit from additional tests:
-- [ ] KOTH mode gameplay
-- [ ] CTF mode gameplay  
-- [ ] PettingZoo environment
-- [ ] Menu system
-- [ ] Integration tests
-- [ ] Performance tests
-- [ ] AI behavior tests
+Domenii care ar putea beneficia de teste suplimentare:
+- [ ] Gameplay mod KOTH
+- [ ] Gameplay mod CTF
+- [ ] Mediu PettingZoo
+- [ ] Sistem meniu
+- [ ] Teste integrare
+- [ ] Teste performanță
+- [ ] Teste comportament AI
 
 ## Troubleshooting
 
-### Common Issues
+### Probleme Comune
 
-**ImportError: No module named 'pygame'**
+**ImportError: Nu se găsește modul 'pygame'**
 ```bash
-# Activate venv and install dependencies
+# Activați venv și instalați dependențe
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**Tests fail with "No such file or directory"**
+**Teste eșuează cu "No such file or directory"**
 ```bash
-# Run tests from project root
+# Rulați teste din rădăcina proiectului
 cd /path/to/lu-12-14-luckycharm
 python tests/run_tests.py
 ```
 
-**Pygame video system not initialized**
-- Some tests may require pygame.init() - already handled in test files
-- Tests run in headless mode (no display required)
+**Sistem video Pygame nu inițializat**
+- Unele teste pot necesita pygame.init() - deja gestionat în fișiere test
+- Teste rulează în mod headless (niciun display necesar)
 
-## Contributing
+## Contribuire
 
-When adding new features:
-1. Write tests first (TDD approach)
-2. Ensure all existing tests still pass
-3. Add tests for edge cases
-4. Document test coverage in this README
+Când adăugați funcții noi:
+1. Scrieți teste mai întâi (abordare TDD)
+2. Asigurați-vă că toate testele existente trec
+3. Adăugați teste pentru cazuri limită
+4. Documentați acoperire teste în acest README

@@ -35,7 +35,7 @@ class Menu:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("Micro Battle - Game Mode Selection")
+        pygame.display.set_caption("Synapse Strike - Game Mode Selection")
         self.clock = pygame.time.Clock()
         self.running = True
         
@@ -127,7 +127,7 @@ class Menu:
         self.screen.fill((30, 30, 60))
         
         # Titlu
-        title_surf = self.title_font.render("MICRO BATTLE", True, (255, 215, 0))
+        title_surf = self.title_font.render("SYNAPSE STRIKE", True, (255, 215, 0))
         title_rect = title_surf.get_rect(center=(SCREEN_WIDTH // 2, 100))
         self.screen.blit(title_surf, title_rect)
         

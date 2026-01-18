@@ -26,7 +26,7 @@ MAP_HEIGHT = 18
 
 # Configurări agenți
 AGENT_SIZE = 20
-AGENT_SPEED = 2
+AGENT_SPEED = 3.5  # Viteza generală
 AGENT_MAX_HEALTH = 100
 AGENT_DAMAGE = 25
 AGENT_ATTACK_RANGE = 250  # Raza de atac (pixels)

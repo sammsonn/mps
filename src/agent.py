@@ -5,6 +5,7 @@ import heapq
 from config import *
 from projectile import Projectile
 
+
 class Agent:
     def __init__(self, x, y, team_id, role=None):
         self.x = x
@@ -44,6 +45,7 @@ class Agent:
         # Inbox pentru mesaje primite
         self.inbox = []  # List[Message]
 
+
         # Inițializează cu o direcție random
         angle = random.uniform(0, 2 * math.pi)
         self.velocity_x = math.cos(angle) * self.speed
@@ -61,19 +63,22 @@ class Agent:
         
         # Comunicare limitată - dacă True, agentul poate comunica doar cu vecinii apropiați
         self.has_limited_communication = False
+        # Comunicare dezactivată - dacă True, agentul nu poate trimite sau primi mesaje
+        self.communication_disabled = False
     
     def get_color(self):
-        """Returnează culoarea agentului în funcție de comunicare limitată"""
-        if self.has_limited_communication:
-            return TEAM_COLORS_LIMITED.get(self.team_id, TEAM_COLORS[self.team_id])
-        return self.color
+        """Returnează culoarea agentului"""
+        if self.communication_disabled:
+            return (100, 100, 100)  # Gri pentru comunicare dezactivată
+        elif self.has_limited_communication:
+            return TEAM_COLORS_LIMITED[self.team_id]
+        else:
+            return TEAM_COLORS[self.team_id]
     
     def update_color(self):
-        """Actualizează culoarea agentului în funcție de comunicare limitată"""
-        if self.has_limited_communication:
-            self.color = TEAM_COLORS_LIMITED.get(self.team_id, TEAM_COLORS[self.team_id])
-        else:
-            self.color = TEAM_COLORS[self.team_id]
+        """Actualizează culoarea agentului folosind culorile normale"""
+        self.color = self.get_color()
+
 
     def _can_broadcast(self, msg_type, current_time, cooldown_ms):
         last = self.last_msg_times.get(msg_type, -1)
@@ -279,6 +284,10 @@ class Agent:
             if hasattr(self, 'agent_id') and self._can_broadcast("LOW_HEALTH", current_time, 1500):
                 self.send_team_broadcast(message_bus, "LOW_HEALTH", {"sender_id": self.agent_id, "x": self.x, "y": self.y, "health": self.health})
 
+
+        # Limitează viteza înainte de aplicarea mișcării pentru a preveni acumularea
+        self._limit_velocity()
+        
         # Aplică mișcarea
         self.apply_movement(obstacles)
     
@@ -628,6 +637,17 @@ class Agent:
         self.path_update_time = 0  # Forțează recalculare imediată
         self.explore_direction = None  # Resetează direcția de explorare
     
+    def _limit_velocity(self):
+        """Limitează viteza totală la viteza constantă pentru a preveni acumularea"""
+        # Calculează viteza totală actuală
+        current_speed_magnitude = math.sqrt(self.velocity_x**2 + self.velocity_y**2)
+        
+        # Dacă viteza nu este exact constanta, normalizează-o
+        if current_speed_magnitude > 0:
+            # Normalizează MEREU la viteza constantă
+            self.velocity_x = (self.velocity_x / current_speed_magnitude) * self.speed
+            self.velocity_y = (self.velocity_y / current_speed_magnitude) * self.speed
+    
     def apply_separation(self, agents):
         """Aplică forță de repulsie față de alți agenți din aceeași echipă"""
         separation_force_x = 0
@@ -652,13 +672,51 @@ class Agent:
             # Dacă sunt prea aproape, aplică forță de repulsie
             if distance < AGENT_SEPARATION_DISTANCE and distance > 0:
                 force = (AGENT_SEPARATION_DISTANCE - distance) / AGENT_SEPARATION_DISTANCE
-                separation_force_x += (dx / distance) * force * self.speed
-                separation_force_y += (dy / distance) * force * self.speed
+                separation_force_x += (dx / distance) * force
+                separation_force_y += (dy / distance) * force
         
-        # Aplică forța de separare cu intensitate redusă când suntem în bază
+        # Aplică forța de separare - combină cu viteza actuală FĂRĂ să adauge viteza
+        # Salvează viteza actuală normalizată
+        current_vx = self.velocity_x
+        current_vy = self.velocity_y
+        
+        # Normalizează viteza actuală la constanta (dacă are viteză)
+        current_mag = math.sqrt(current_vx**2 + current_vy**2)
+        if current_mag > 0:
+            current_vx = (current_vx / current_mag) * self.speed
+            current_vy = (current_vy / current_mag) * self.speed
+        
+        # Aplică separarea: combină direcțiile fără să adauge viteza
         separation_multiplier = 0.15 if in_base else 0.3
-        self.velocity_x += separation_force_x * separation_multiplier
-        self.velocity_y += separation_force_y * separation_multiplier
+        
+        # Dacă există forță de separare, combină direcțiile
+        if abs(separation_force_x) > 0.001 or abs(separation_force_y) > 0.001:
+            # Normalizează forța de separare
+            sep_mag = math.sqrt(separation_force_x**2 + separation_force_y**2)
+            if sep_mag > 0:
+                separation_force_x = (separation_force_x / sep_mag) * separation_multiplier
+                separation_force_y = (separation_force_y / sep_mag) * separation_multiplier
+                
+                # Combină direcțiile (viteza actuală + forța de separare ponderată)
+                # Menține viteza constantă, doar schimbă direcția
+                combined_vx = current_vx + separation_force_x * self.speed
+                combined_vy = current_vy + separation_force_y * self.speed
+                
+                # Normalizează la viteza constantă
+                combined_mag = math.sqrt(combined_vx**2 + combined_vy**2)
+                if combined_mag > 0:
+                    self.velocity_x = (combined_vx / combined_mag) * self.speed
+                    self.velocity_y = (combined_vy / combined_mag) * self.speed
+                else:
+                    self.velocity_x = current_vx
+                    self.velocity_y = current_vy
+            else:
+                self.velocity_x = current_vx
+                self.velocity_y = current_vy
+        else:
+            # Nu există separare, păstrează viteza normalizată
+            self.velocity_x = current_vx
+            self.velocity_y = current_vy
     
     def is_in_line_of_sight(self, agent, obstacles):
         """
@@ -739,7 +797,9 @@ class Agent:
             if closest_enemy and message_bus and hasattr(self, 'agent_id'):
                 message_bus.broadcast_enemy_spotted(self, closest_enemy)
 
+
         self.target = closest_enemy
+
 
     def process_inbox(self, message_bus):
         """Procesează mesajele primite pentru actualizare ținte/decizii simple."""
@@ -825,11 +885,15 @@ class Agent:
         # Golește inbox-ul după procesare (mesaje sunt temporare)
         self.inbox = []
 
+
     def send_team_broadcast(self, message_bus, msg_type, payload):
         """Trimite un mesaj de echipă generic.
         
         Coordonatele (x, y) din payload sunt rotunjite automat la 3 zecimale.
         """
+        # Dacă comunicarea este dezactivată, nu trimite mesaje
+        if getattr(self, 'communication_disabled', False):
+            return
         if not message_bus or not hasattr(self, 'agent_id'):
             return
         from communication import Message  # Import local pentru a evita cicluri
@@ -967,6 +1031,9 @@ class Agent:
     
     def follow_path(self):
         """Urmează calea calculată"""
+        # Folosește MEREU viteza constantă
+        speed = self.speed
+        
         if not self.path:
             # Dacă nu există cale, încearcă să te miști direct spre țintă
             self.move_direct_to_target()
@@ -979,7 +1046,7 @@ class Agent:
         distance = math.sqrt(dx*dx + dy*dy)
         
         # Dacă suntem foarte aproape de punct, treci la următorul
-        if distance < self.speed * 2:
+        if distance < speed * 2:
             self.path.pop(0)
             if not self.path:
                 # Dacă nu mai există puncte, mergi direct la țintă sau steag
@@ -992,8 +1059,8 @@ class Agent:
                     dy = flag_y - self.y
                     distance = (dx*dx + dy*dy) ** 0.5
                     if distance > 0:
-                        self.velocity_x = (dx / distance) * self.speed
-                        self.velocity_y = (dy / distance) * self.speed
+                        self.velocity_x = (dx / distance) * speed
+                        self.velocity_y = (dy / distance) * speed
                 return
             else:
                 # Recalculează pentru următorul punct
@@ -1004,8 +1071,8 @@ class Agent:
         
         # Calculează velocitățile pentru a te mișca spre următorul punct
         if distance > 0:
-            self.velocity_x = (dx / distance) * self.speed
-            self.velocity_y = (dy / distance) * self.speed
+            self.velocity_x = (dx / distance) * speed
+            self.velocity_y = (dy / distance) * speed
         else:
             # Dacă distanța e 0, elimină punctul și continuă
             self.path.pop(0) if self.path else None
@@ -1015,21 +1082,23 @@ class Agent:
         if not self.target:
             return
         
+        # Folosește MEREU viteza constantă
+        speed = self.speed
+        
         dx = self.target.x - self.x
         dy = self.target.y - self.y
         distance = math.sqrt(dx*dx + dy*dy)
         
         if distance > 0:
-            if distance > AGENT_ATTACK_RANGE * 0.8:
-                self.velocity_x = (dx / distance) * self.speed
-                self.velocity_y = (dy / distance) * self.speed
-            else:
-                # Încetinește când e aproape
-                self.velocity_x = (dx / distance) * self.speed * 0.4
-                self.velocity_y = (dy / distance) * self.speed * 0.4
+            # MEREU aceeași viteză constantă
+            self.velocity_x = (dx / distance) * speed
+            self.velocity_y = (dy / distance) * speed
     
     def explore(self):
-        """Mișcare de explorare când nu există țintă"""
+        """Mișcare de explorare când nu există țintă - viteza constantă"""
+        # Folosește viteza de bază (constantă) pentru căutare
+        speed = self.speed  # Viteza constantă pentru explorare
+        
         # Pentru CTF, dacă există target_flag, mergi către el
         if self.target_flag and not self.carrying_flag:
             flag_x = self.target_flag.x
@@ -1041,8 +1110,8 @@ class Agent:
             
             if distance > 0:
                 # Normalizează și aplică velocitatea
-                self.velocity_x = (dx / distance) * self.speed
-                self.velocity_y = (dy / distance) * self.speed
+                self.velocity_x = (dx / distance) * speed
+                self.velocity_y = (dy / distance) * speed
             return
         
         # Pentru Survival mode, explorare activă către centrul hărții sau zonele inamice
@@ -1059,20 +1128,20 @@ class Agent:
         if distance_to_center > 150:
             # Foarte departe de centru, mergi direct către centru
             if distance_to_center > 0:
-                self.velocity_x = (dx / distance_to_center) * self.speed
-                self.velocity_y = (dy / distance_to_center) * self.speed
+                self.velocity_x = (dx / distance_to_center) * speed
+                self.velocity_y = (dy / distance_to_center) * speed
         elif distance_to_center > 80:
             # Aproape de centru, dar nu încă acolo - mergi către centru cu varietate
             if distance_to_center > 0:
                 # 80% către centru, 20% direcție random pentru varietate
                 if random.random() < 0.8:
-                    self.velocity_x = (dx / distance_to_center) * self.speed
-                    self.velocity_y = (dy / distance_to_center) * self.speed
+                    self.velocity_x = (dx / distance_to_center) * speed
+                    self.velocity_y = (dy / distance_to_center) * speed
                 else:
                     # Schimbă direcția random pentru explorare
                     angle = random.uniform(0, 2 * math.pi)
-                    self.velocity_x = math.cos(angle) * self.speed
-                    self.velocity_y = math.sin(angle) * self.speed
+                    self.velocity_x = math.cos(angle) * speed
+                    self.velocity_y = math.sin(angle) * speed
         else:
             # E în centru sau foarte aproape, explorează activ și evită pereții
             # Nu mai merge către centru, explorează perpendicular sau opus
@@ -1089,15 +1158,16 @@ class Agent:
                     # Opus direcției către centru (departe de centru)
                     angle = center_angle + math.pi + random.uniform(-math.pi/3, math.pi/3)
                 
-                self.velocity_x = math.cos(angle) * self.speed
-                self.velocity_y = math.sin(angle) * self.speed
+                self.velocity_x = math.cos(angle) * speed
+                self.velocity_y = math.sin(angle) * speed
             # Altfel, continuă în direcția curentă (dacă există)
             elif abs(self.velocity_x) < 0.1 and abs(self.velocity_y) < 0.1:
                 # Dacă nu se mișcă, forțează o direcție perpendiculară pe centru
                 perpendicular = random.choice([-1, 1])
                 angle = center_angle + (perpendicular * math.pi / 2) + random.uniform(-math.pi/4, math.pi/4)
-                self.velocity_x = math.cos(angle) * self.speed
-                self.velocity_y = math.sin(angle) * self.speed
+                self.velocity_x = math.cos(angle) * speed
+                self.velocity_y = math.sin(angle) * speed
+
 
     def _build_search_waypoints(self):
         """Construiește o listă de puncte de căutare care acoperă harta sistematic (colțuri, margini, centru)."""
@@ -1380,3 +1450,6 @@ class Agent:
         # Viață curentă
         pygame.draw.rect(screen, (0, 255, 0), 
                         (bar_x, bar_y, health_bar_width * health_percentage, health_bar_height))
+
+
+

@@ -13,39 +13,50 @@ from communication import MessageBus
 from statistics import StatisticsTracker
 from logger import logger
 
+
+
+
 class Game:
     def __init__(self, game_mode="Survival"):
         pygame.init()
         logger.info(f"Initializing game - Mode: {game_mode}")
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption(f"Micro Battle - {game_mode} Mode")
+        pygame.display.set_caption(f"Synapse Strike - {game_mode} Mode")
         self.clock = pygame.time.Clock()
         self.running = True
         self.game_mode_name = game_mode
+        # Team communication modes: randomly assign "FULL", "LIMITED", or "NONE" for each team
+        communication_types = ["FULL", "LIMITED", "NONE"]
+        self.team_communication_modes = {}
+        for team_id in range(2):  # Assuming 2 teams
+            mode = random.choice(communication_types)
+            self.team_communication_modes[team_id] = mode
+            logger.info(f"Team {team_id} has communication {mode}")
         # Bus de mesaje pentru comunicare între agenți
         self.message_bus = MessageBus()
-        
+       
         # Creează harta (cu parametri specifici pentru game mode)
         self.game_map = GameMap(game_mode)
         logger.info(f"Game map created for {game_mode} mode")
-        
+       
         # Creează agenții bazat pe modul de joc
         self.agents = []
-        
+       
         if game_mode == "King of the Hill":
             num_teams = 2
             agents_per_team = KOTH_AGENTS_PER_TEAM
-            
+           
             for team_id in range(num_teams):
                 for i in range(agents_per_team):
                     x, y = self.game_map.get_spawn_position(team_id, num_teams)
-                    
+                   
                     # Alocă roluri: unii atacatori, alții apărători (random)
                     role = ROLE_ATTACKER #if random.random() < 0.5 else ROLE_DEFENDER
                     agent = Agent(x, y, team_id, role)
                     agent.agent_id = f"agent_{team_id}_{i}"
-                    # Unii agenți au comunicare limitată (doar cu vecinii apropiați)
-                    agent.has_limited_communication = random.random() < 0.5
+                    # Comunicarea se bazează pe modul echipei
+                    agent.has_limited_communication = self.team_communication_modes[team_id] == "LIMITED"
+                    agent.communication_disabled = self.team_communication_modes[team_id] == "NONE"
                     agent.update_color()
                     self.agents.append(agent)
             logger.info(f"Created {num_teams} teams with {agents_per_team} agents each for King of the Hill mode")
@@ -58,8 +69,9 @@ class Game:
                     # Toți agenții sunt atacatori
                     agent = Agent(x, y, team_id, ROLE_ATTACKER)
                     agent.agent_id = f"agent_{team_id}_{i}"
-                    # Unii agenți au comunicare limitată (doar cu vecinii apropiați)
-                    agent.has_limited_communication = random.random() < 0.5
+                    # Comunicarea se bazează pe modul echipei
+                    agent.has_limited_communication = self.team_communication_modes[team_id] == "LIMITED"
+                    agent.communication_disabled = self.team_communication_modes[team_id] == "NONE"
                     agent.update_color()
                     self.agents.append(agent)
             logger.info(f"Created {num_teams} teams with {agents_per_team} agents each for Capture the Flag mode")
@@ -67,35 +79,40 @@ class Game:
             # Survival mode - 5 agenți per echipă, fără roluri
             num_teams = 2
             agents_per_team = 5
-            
+           
             for team_id in range(num_teams):
                 for i in range(agents_per_team):
                     x, y = self.game_map.get_spawn_position(team_id, num_teams)
                     agent = Agent(x, y, team_id)
                     agent.agent_id = f"agent_{team_id}_{i}"
-                    # Unii agenți au comunicare limitată (doar cu vecinii apropiați)
-                    agent.has_limited_communication = random.random() < 0.5
+                    # Comunicarea se bazează pe modul echipei
+                    agent.has_limited_communication = self.team_communication_modes[team_id] == "LIMITED"
+                    agent.communication_disabled = self.team_communication_modes[team_id] == "NONE"
                     agent.update_color()
                     self.agents.append(agent)
             logger.info(f"Created {num_teams} teams with {agents_per_team} agents each for Survival mode")
-        
+       
         # Lista de proiectile
         self.projectiles = []
-        
+       
         # Creează tracker-ul de statistici
         self.statistics_tracker = StatisticsTracker()
-        
+       
         # Inițializează statistici pentru agenți
         for agent in self.agents:
             self.statistics_tracker.on_agent_spawn(agent)
-        
+       
         # Index agenți pentru bus
         self.agent_index = {getattr(a, 'agent_id', f'id_{idx}'): a for idx, a in enumerate(self.agents)}
         self.message_bus.set_agents(self.agent_index)
+        self.message_bus.set_team_communication_modes(self.team_communication_modes)
+
+
+
 
         # Inițializează modul de joc ales
         if game_mode == "Survival":
-            self.game_mode = SurvivalMode(self.agents)
+            self.game_mode = SurvivalMode(self.agents, self.statistics_tracker)
             logger.info("Survival mode initialized")
         elif game_mode == "King of the Hill":
             self.game_mode = KingOfTheHillMode(self.agents, self.game_map, self.statistics_tracker)
@@ -116,8 +133,8 @@ class Game:
                 agent.own_flag = self.game_mode.flags[agent.team_id]  # Steagul propriu (pentru apărare)
         else:
             # Default la Survival dacă nu recunoaște modul
-            self.game_mode = SurvivalMode(self.agents)
-    
+            self.game_mode = SurvivalMode(self.agents, self.statistics_tracker)
+   
     def run(self):
         """Bucla principală a jocului"""
         while self.running:
@@ -127,10 +144,10 @@ class Game:
             self.update()
             self.draw()
             self.clock.tick(FPS)
-        
+       
         pygame.quit()
         return None
-    
+   
     def handle_events(self):
         """Gestionează evenimente"""
         for event in pygame.event.get():
@@ -149,16 +166,16 @@ class Game:
                     self.running = False
                     return "MENU"
         return None
-    
+   
     def update(self):
         """Actualizează starea jocului"""
         if not self.game_mode.game_over:
             current_time = pygame.time.get_ticks()
-            
+           
             # Actualizează agenții
             for agent in self.agents:
                 was_alive = agent.alive
-                
+               
                 # Actualizează tracking mișcare
                 if agent.alive:
                     self.statistics_tracker.update_agent_movement(agent)
@@ -167,23 +184,23 @@ class Game:
                 agent.process_inbox(self.message_bus)
                 # Update cu bus pentru broadcast
                 agent.update(self.agents, self.game_map.obstacles, current_time, message_bus=self.message_bus)
-                
+               
                 # Verifică dacă agentul tocmai a murit și notifică game mode-ul (pentru respawn)
                 if was_alive and not agent.alive:
                     self.statistics_tracker.on_agent_death(agent)
                     logger.game_event("AGENT_DEATH", f"Agent {agent.agent_id} from team {agent.team_id} died")
                     if self.game_mode_name in ["King of the Hill", "Capture the Flag"]:
                         self.game_mode.on_agent_death(agent)
-                
+               
                 # Verifică dacă agentul trebuie să tragă
                 if agent.alive and agent.target and getattr(agent.target, "alive", False):
                     self.statistics_tracker.on_shot_fired(agent)
                     agent.try_attack(current_time, self.projectiles)
-            
+           
             # Actualizează proiectilele
             for projectile in self.projectiles[:]:
                 projectile.update(current_time)
-                
+               
                 # Verifică coliziuni cu agenți
                 for agent in self.agents:
                     was_alive_before = agent.alive
@@ -196,7 +213,7 @@ class Game:
                                 agent
                             )
                             self.statistics_tracker.on_shot_hit(projectile.owner)
-                            
+                           
                             # Pentru KOTH, verifică dacă damage-ul a fost provocat în zonă sau în afara zonei
                             # Verificăm poziția agentului care a tras (owner), nu a celui lovit
                             if self.game_mode_name == "King of the Hill" and self.statistics_tracker and projectile.owner:
@@ -212,7 +229,7 @@ class Game:
                                             in_zone = True
                                             break
                                 self.statistics_tracker.on_koth_damage(projectile.owner, projectile.damage, in_zone)
-                        
+                       
                         # Verifică dacă agentul tocmai a murit (din cauza proiectilului)
                         if was_alive_before and not agent.alive:
                             self.statistics_tracker.on_agent_death(agent)
@@ -220,71 +237,86 @@ class Game:
                             if self.game_mode_name in ["King of the Hill", "Capture the Flag"]:
                                 self.game_mode.on_agent_death(agent)
                         break
-                
+               
                 # Verifică coliziuni cu obstacole
                 hit_obstacle = projectile.check_collision_with_obstacles(self.game_map.obstacles)
                 if hit_obstacle:
                     hit_obstacle.take_damage(PROJECTILE_DAMAGE)
-                
+               
                 # Elimină proiectile moarte
                 if not projectile.alive:
                     self.projectiles.remove(projectile)
-            
+           
             # Actualizează obstacole (elimină cele distruse)
             self.game_map.update_obstacles()
             # Curăță mesaje expirate
             self.message_bus.cleanup(current_time)
-        
+       
         self.game_mode.update()
-    
+   
     def draw(self):
         """Desenează totul"""
         self.game_map.draw(self.screen)
-        
+       
         # Desenează proiectilele
         for projectile in self.projectiles:
             projectile.draw(self.screen)
-        
+       
         # Desenează agenții
         for agent in self.agents:
             agent.draw(self.screen)
-        
+       
         # Desenează proiectilele
         for projectile in self.projectiles:
             projectile.draw(self.screen)
-        
+       
         self.game_mode.draw_ui(self.screen)
-        
+       
         # Instrucțiuni
         if self.game_mode.game_over:
             font = pygame.font.Font(None, 24)
             restart_text = font.render("Press R to restart, M for menu, ESC to quit", True, (255, 255, 255))
             self.screen.blit(restart_text, (SCREEN_WIDTH // 2 - 180, SCREEN_HEIGHT - 30))
-        
+       
         pygame.display.flip()
+
+
+
 
 def main():
     while True:
         # Afișează meniul
         menu = Menu()
         selected_mode = menu.run()
-        
+       
         # Verifică dacă utilizatorul a ieșit
         if selected_mode is None:
             logger.info("User exited from menu")
             logger.shutdown()
             break
-        
+       
         # Pornește jocul cu modul selectat
         logger.info(f"Starting game with mode: {selected_mode}")
         game = Game(selected_mode)
         result = game.run()
-        
+       
         # Verifică dacă utilizatorul vrea să se întoarcă la meniu
         if result != "MENU":
             logger.info("User exited game")
             logger.shutdown()
             break
 
+
+
+
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+

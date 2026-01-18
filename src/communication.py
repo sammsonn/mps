@@ -33,10 +33,15 @@ class MessageBus:
         self.max_age_ms = max_age_ms
         self.messages = []
         self._agent_index = {}  # agent_id -> Agent
+        self._team_communication_modes = {}  # team_id -> "FULL" | "LIMITED" | "NONE"
 
     def set_agents(self, agent_index):
         """Actualizează indexul de agenți (apelat după spawn/reset)."""
         self._agent_index = agent_index
+
+    def set_team_communication_modes(self, team_modes):
+        """Setează modurile de comunicare pentru fiecare echipă."""
+        self._team_communication_modes = team_modes
 
     def publish(self, message):
         self.messages.append(message)
@@ -53,16 +58,35 @@ class MessageBus:
         
         Dacă receiving_agent este furnizat și mesajul este de la un agent cu comunicare limitată,
         verifică dacă receptorul este suficient de aproape pentru a primi mesajul.
+        
+        Respectă modul de comunicare al echipei: NONE blochează toate mesajele, 
+        LIMITED permite doar mesajele de la vecinii apropiați, FULL permite toate mesajele.
         """
+        # Dacă echipa nu are comunicare (NONE), returnează lista goală
+        team_mode = self._team_communication_modes.get(team_id, "FULL")
+        if team_mode == "NONE":
+            return []
+        
         filtered_messages = []
         for m in self.messages:
             # Verifică dacă mesajul este pentru echipa corectă și nu a expirat
             if m.team_id != team_id or (current_time - m.timestamp) > self.max_age_ms:
                 continue
             
-            # Dacă mesajul este de la un agent cu comunicare limitată
-            if m.is_limited and receiving_agent is not None:
+            # Pentru modul LIMITED, verifică distanța
+            if team_mode == "LIMITED" and receiving_agent is not None:
                 # Verifică dacă receptorul este suficient de aproape
+                if m.sender_x is not None and m.sender_y is not None:
+                    dx = receiving_agent.x - m.sender_x
+                    dy = receiving_agent.y - m.sender_y
+                    distance = math.sqrt(dx*dx + dy*dy)
+                    
+                    # Dacă distanța este mai mare decât raza de comunicare, ignoră mesajul
+                    if distance > COMMUNICATION_RANGE:
+                        continue
+            # Pentru modul FULL, toate mesajele sunt permise (dar verificăm și flag-ul legacy is_limited)
+            elif m.is_limited and receiving_agent is not None:
+                # Verifică dacă receptorul este suficient de aproape pentru mesajele cu is_limited=True
                 if m.sender_x is not None and m.sender_y is not None:
                     dx = receiving_agent.x - m.sender_x
                     dy = receiving_agent.y - m.sender_y
@@ -89,6 +113,9 @@ class MessageBus:
         Dacă agentul are comunicare limitată, mesajul va fi primit doar de vecinii apropiați.
         Coordonatele sunt rotunjite la 3 zecimale.
         """
+        # Dacă comunicarea este dezactivată pentru agent, nu trimite mesaje
+        if getattr(spotter_agent, 'communication_disabled', False):
+            return
         if not enemy_agent:
             return
         ts = pygame.time.get_ticks()
